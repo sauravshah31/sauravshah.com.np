@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meta.name or 'Saurav Shah' }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="page-header">
+        <h1 class="site-title">{{ meta.name or 'Saurav Shah' }}</h1>
+        
+        {% if meta.photo %}
+        <div class="header-photo home-photo">
+            <img src="assets/{{ meta.photo }}" alt="{{ meta.name or 'Profile Photo' }}">
+        </div>
+        {% endif %}
+        
+        <div class="header-content">
+            <div class="intro">
+                {% if meta.intro %}
+                    {% for line in meta.intro.split('\n') %}
+                        <p>{{ line }}</p>
+                    {% endfor %}
+                {% else %}
+                    <p>Welcome to my personal blog</p>
+                {% endif %}
+            </div>
+            
+            {% if meta.social_links %}
+            <div class="social-links">
+                {% for link in meta.social_links %}
+                    <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="social-icon" title="{{ link.type }}">
+                        {% if link.type == 'instagram' %}
+                            <i class="fab fa-instagram"></i>
+                        {% elif link.type == 'twitter' or link.type == 'x' %}
+                            <i class="fab fa-x-twitter"></i>
+                        {% elif link.type == 'github' %}
+                            <i class="fab fa-github"></i>
+                        {% elif link.type == 'linkedin' %}
+                            <i class="fab fa-linkedin"></i>
+                        {% elif link.type == 'facebook' %}
+                            <i class="fab fa-facebook"></i>
+                        {% elif link.type == 'email' %}
+                            <i class="fas fa-envelope"></i>
+                        {% else %}
+                            <i class="fas fa-link"></i>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </header>
+    
+    <main class="toc-section">
+        <h2 class="toc-title">Contents</h2>
+        <nav class="toc-links">
+            {% for section in sections %}
+            <a href="{{ section.path }}/" class="toc-link">
+                <span class="toc-arrow">▸</span>
+                <span class="toc-text">{{ section.title }}</span>
+            </a>
+            {% endfor %}
+        </nav>
+    </main>
+</div>
+{% endblock %}

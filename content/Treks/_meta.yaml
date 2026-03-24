@@ -1,0 +1,9 @@
+title: "Treks"
+intro: |
+  My trekking adventures across Nepal and beyond
+  From the high Himalayas to the lush hills
+photos:
+  - .data/treks-cover.jpg
+social_links:
+  - type: instagram
+    url: "https://instagram.com/sauravshah"

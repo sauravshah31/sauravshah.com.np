@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}{{ meta.title or 'Contents' }} — Saurav Shah{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="page-header">
+        <div class="header-title">
+            <div class="nav-links">
+                <a href="../" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <a href="{{ '../' * (current_path.count('/') + 1) }}" class="home-link">
+                    <i class="fas fa-house"></i> Home
+                </a>
+            </div>
+            <h1 class="site-title">{{ meta.title or current_path }}</h1>
+        </div>
+        
+        {% if meta.photos %}
+        <div class="header-slideshow">
+            <div class="slideshow header-slideshow-inner" data-interval="4000">
+                {% for photo in meta.photos %}
+                    <img src="{{ '../' * (current_path.count('/') + 1) }}assets/{{ current_path }}/{{ photo.split('/')[-1] }}" 
+                         class="slide {% if loop.first %}active{% endif %}" 
+                         alt="Photo {{ loop.index }}">
+                {% endfor %}
+            </div>
+        </div>
+        {% elif meta.photo %}
+        <div class="header-photo">
+            <img src="{{ '../' * (current_path.count('/') + 1) }}assets/{{ current_path }}/{{ meta.photo.split('/')[-1] }}" 
+                 alt="{{ meta.title or 'Photo' }}">
+        </div>
+        {% endif %}
+        
+        <div class="header-content">
+            <div class="intro">
+                {% if meta.intro %}
+                    {% for line in meta.intro.split('\n') %}
+                        <p>{{ line }}</p>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            {% if meta.social_links %}
+            <div class="social-links">
+                {% for link in meta.social_links %}
+                    <a href="{{ link.url }}" target="_blank" rel="noopener noreferrer" class="social-icon" title="{{ link.type }}">
+                        {% if link.type == 'instagram' %}
+                            <i class="fab fa-instagram"></i>
+                        {% elif link.type == 'twitter' or link.type == 'x' %}
+                            <i class="fab fa-x-twitter"></i>
+                        {% elif link.type == 'github' %}
+                            <i class="fab fa-github"></i>
+                        {% elif link.type == 'linkedin' %}
+                            <i class="fab fa-linkedin"></i>
+                        {% elif link.type == 'facebook' %}
+                            <i class="fab fa-facebook"></i>
+                        {% elif link.type == 'email' %}
+                            <i class="fas fa-envelope"></i>
+                        {% else %}
+                            <i class="fas fa-link"></i>
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </header>
+    
+    <main class="toc-section">
+        <h2 class="toc-title">Contents</h2>
+        <nav class="toc-links">
+            {% for section in subsections %}
+            <a href="{{ section.name | urlencode }}/" class="toc-link">
+                <span class="toc-arrow">▸</span>
+                <span class="toc-text">{{ section.title }}</span>
+            </a>
+            {% endfor %}
+        </nav>
+    </main>
+</div>
+{% endblock %}
