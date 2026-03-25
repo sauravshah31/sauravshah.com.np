@@ -140,13 +140,14 @@ class SiteGenerator:
                 video_id = re.search(r'(?:v=|youtu\.be/)([a-zA-Z0-9_-]+)', video_id)
                 video_id = video_id.group(1) if video_id else ''
             return f'''<div class="youtube-embed">
-                <iframe src="https://www.youtube.com/embed/{video_id}" 
-                        frameborder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                <iframe src="https://www.youtube.com/embed/{video_id}"
+                        loading="lazy"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowfullscreen>
                 </iframe>
             </div>'''
-        
+
         # Local / OneDrive video
         def replace_video(match):
             params = match.group(1).split(',')
@@ -158,12 +159,12 @@ class SiteGenerator:
                     poster_attr = f'poster="{poster_url}"'
 
             return f'''<div class="video-container">
-                <video controls playsinline {poster_attr}>
+                <video controls playsinline preload="metadata" {poster_attr}>
                     <source src="{video_url}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             </div>'''
-        
+
         # Slideshow (local or OneDrive images)
         def replace_slideshow(match):
             params = match.group(1).split(',')
@@ -178,27 +179,36 @@ class SiteGenerator:
             for i, img in enumerate(images):
                 img_url = self.process_url(img)
                 active = 'active' if i == 0 else ''
-                slides_html += f'<img src="{img_url}" class="slide {active}" alt="Slide {i+1}">\n'
+                # All slides load eagerly so they are ready before the user sees them;
+                # decoding="async" keeps decoding off the main thread (no render blocking).
+                slides_html += (
+                    f'<img src="{img_url}" class="slide {active}" '
+                    f'alt="Slide {i+1}" loading="eager" decoding="async">\n'
+                )
 
             return f'''<div class="slideshow" data-interval="{interval}">
                 {slides_html}
             </div>'''
-        
+
         # Short video – vertical (local or OneDrive)
         def replace_short(match):
             video_url = self.process_url(match.group(1))
 
             return f'''<div class="short-video">
-                <video controls playsinline loop>
+                <video controls playsinline loop preload="metadata">
                     <source src="{video_url}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             </div>'''
-        
+
         # Single photo (local or OneDrive)
         def replace_photo(match):
             img_url = self.process_url(match.group(1))
-            return f'<div class="photo-embed"><img src="{img_url}" alt="Photo"></div>'
+            return (
+                f'<div class="photo-embed">'
+                f'<img src="{img_url}" alt="Photo" loading="eager" decoding="async">'
+                f'</div>'
+            )
 
         # Gallery (local or OneDrive images)
         def replace_gallery(match):
@@ -207,7 +217,10 @@ class SiteGenerator:
 
             for img in images:
                 img_url = self.process_url(img)
-                gallery_html += f'<img src="{img_url}" alt="Gallery image">\n'
+                gallery_html += (
+                    f'<img src="{img_url}" alt="Gallery image" '
+                    f'loading="eager" decoding="async">\n'
+                )
 
             return f'<div class="gallery">\n{gallery_html}</div>'
         

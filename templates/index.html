@@ -23,13 +23,16 @@
                 {% for photo in meta.photos %}
                     <img src="{{ photo }}"
                          class="slide {% if loop.first %}active{% endif %}"
-                         alt="Photo {{ loop.index }}">
+                         alt="Photo {{ loop.index }}"
+                         loading="eager"
+                         decoding="async">
                 {% endfor %}
             </div>
         </div>
         {% elif meta.photo %}
         <div class="header-photo">
-            <img src="{{ meta.photo }}" alt="{{ meta.title or 'Photo' }}">
+            <img src="{{ meta.photo }}" alt="{{ meta.title or 'Photo' }}"
+                 loading="eager" decoding="async">
         </div>
         {% endif %}
         

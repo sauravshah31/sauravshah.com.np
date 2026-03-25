@@ -2,8 +2,8 @@
 title: "Everest Base Camp Trek"
 intro: "17 days, 130km, and a lifetime of memories at 5,364m"
 photos:
-  - .data/ebc1.jpg
-  - .data/ebc2.jpg
+  - https://1drv.ms/u/c/6130e1ea01aaf0cc/IQQ87nfIwrI8RJJ-rSNP3xOUAWQS-7oSjWqNez0F705c7bg?width=256
+  - https://1drv.ms/u/c/6130e1ea01aaf0cc/IQQ87nfIwrI8RJJ-rSNP3xOUAWQS-7oSjWqNez0F705c7bg?width=256
 social_links:
   - type: instagram
     url: "https://instagram.com/sauravshah"
