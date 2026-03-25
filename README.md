@@ -68,9 +68,10 @@ social_links:
 ```yaml
 title: "Section Title"
 intro: "Section description"
+# Local files or OneDrive embed URLs (or mixed):
 photos:
   - .data/photo1.jpg
-  - .data/photo2.jpg
+  - https://1drv.ms/i/c/XXXX/IQQ...?width=NNN&height=NNN
 social_links:
   - type: instagram
     url: "https://instagram.com/yourhandle"
@@ -82,9 +83,10 @@ social_links:
 ---
 title: "Page Title"
 intro: "Page description"
+# Local files or OneDrive embed URLs (or mixed):
 photos:
   - .data/photo1.jpg
-  - .data/photo2.jpg
+  - https://1drv.ms/i/c/XXXX/IQQ...?width=NNN&height=NNN
 ---
 
 # Your Content Here
@@ -101,30 +103,51 @@ Write your blog post in markdown...
 {{youtube: https://youtube.com/watch?v=VIDEO_ID}}
 ```
 
-### Local Videos
+### Videos
+
+Local file or OneDrive embed URL:
 
 ```markdown
 {{video: .data/video.mp4}}
 {{video: .data/video.mp4, poster=.data/poster.jpg}}
-```
-
-### Slideshows
-
-```markdown
-{{slideshow: .data/img1.jpg, .data/img2.jpg, .data/img3.jpg}}
-{{slideshow: .data/img1.jpg, .data/img2.jpg, interval=5}}
+{{video: https://1drv.ms/i/c/XXXX/IQQ...?width=NNN&height=NNN}}
 ```
 
 ### Short Videos (Vertical)
 
+Local file or OneDrive embed URL:
+
 ```markdown
 {{short: .data/reel.mp4}}
+{{short: https://1drv.ms/i/c/XXXX/IQQ...}}
+```
+
+### Single Photo
+
+Local file or OneDrive embed URL:
+
+```markdown
+{{photo: .data/image.jpg}}
+{{photo: https://1drv.ms/i/c/XXXX/IQQ...?width=NNN&height=NNN}}
+```
+
+### Slideshows
+
+Local files or OneDrive embed URLs (can be mixed):
+
+```markdown
+{{slideshow: .data/img1.jpg, .data/img2.jpg, .data/img3.jpg}}
+{{slideshow: .data/img1.jpg, .data/img2.jpg, interval=5}}
+{{slideshow: https://1drv.ms/i/c/XXXX/IQQ...?width=NNN&height=NNN, https://1drv.ms/i/c/XXXX/IQQ...}}
 ```
 
 ### Image Galleries
 
+Local files or OneDrive embed URLs (can be mixed):
+
 ```markdown
 {{gallery: .data/photo1.jpg, .data/photo2.jpg, .data/photo3.jpg}}
+{{gallery: https://1drv.ms/i/c/XXXX/IQQ...?width=NNN&height=NNN, https://1drv.ms/i/c/XXXX/IQQ...}}
 ```
 
 ### Styled Quotes
@@ -289,6 +312,18 @@ Edit templates in `templates/` directory using Jinja2 syntax.
 - Ensure images are in `.data/` folders
 - Use relative paths: `.data/image.jpg`
 - Check file extensions match (case-sensitive on Linux)
+
+### OneDrive media not loading?
+
+- You **must use the embed URL**, not the generic sharing URL.
+- In OneDrive, right-click the file → **Embed** → copy the URL from the embed code.
+  The embed URL looks like:
+  ```
+  https://1drv.ms/i/c/XXXX/IQQ...?width=NNN&height=NNN
+  ```
+- The file must be publicly accessible ("Anyone with the link can view").
+- The generator converts the embed URL to a direct Microsoft Graph API content URL automatically — no API key required.
+- Generic sharing URLs (`/u/` path) do **not** work as direct image sources.
 
 ### Nepali text not displaying?
 

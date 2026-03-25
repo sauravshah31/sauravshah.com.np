@@ -21,16 +21,15 @@
         <div class="header-slideshow">
             <div class="slideshow header-slideshow-inner" data-interval="4000">
                 {% for photo in meta.photos %}
-                    <img src="{{ '../' * (current_path.count('/') + 1) }}assets/{{ current_path }}/{{ photo.split('/')[-1] }}" 
-                         class="slide {% if loop.first %}active{% endif %}" 
+                    <img src="{{ photo }}"
+                         class="slide {% if loop.first %}active{% endif %}"
                          alt="Photo {{ loop.index }}">
                 {% endfor %}
             </div>
         </div>
         {% elif meta.photo %}
         <div class="header-photo">
-            <img src="{{ '../' * (current_path.count('/') + 1) }}assets/{{ current_path }}/{{ meta.photo.split('/')[-1] }}" 
-                 alt="{{ meta.title or 'Photo' }}">
+            <img src="{{ meta.photo }}" alt="{{ meta.title or 'Photo' }}">
         </div>
         {% endif %}
         

@@ -9,7 +9,7 @@
         
         {% if meta.photo %}
         <div class="header-photo home-photo">
-            <img src="assets/{{ meta.photo }}" alt="{{ meta.name or 'Profile Photo' }}">
+            <img src="{{ meta.photo }}" alt="{{ meta.name or 'Profile Photo' }}">
         </div>
         {% endif %}
         

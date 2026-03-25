@@ -7,6 +7,7 @@ Converts markdown content with custom syntax to static HTML
 import os
 import re
 import shutil
+import base64
 import yaml
 from pathlib import Path
 from markdown import markdown
@@ -58,9 +59,79 @@ class SiteGenerator:
                 
         return front_matter, body
         
+    def is_onedrive_url(self, url):
+        """Check if a URL is a OneDrive sharing link"""
+        return any(d in url for d in ['1drv.ms', 'onedrive.live.com', 'sharepoint.com'])
+
+    def convert_onedrive_to_direct(self, url):
+        """
+        Return the OneDrive URL as-is so the browser follows the redirect chain
+        at page-load time.
+
+        For embed URLs (https://1drv.ms/i/c/...?width=...&height=...) the
+        browser follows a pure HTTP redirect to the image CDN and displays the
+        image — no build-time network request or token needed.
+
+        Generic sharing URLs (/u/ path) redirect to an HTML viewer and will
+        show a broken image; use the embed URL from OneDrive's Embed dialog.
+        """
+        return url
+
+    def process_url(self, url):
+        """
+        Resolve a media URL inside markdown body:
+          - OneDrive sharing links  → Graph API direct-content URL
+          - Other http/https URLs   → used as-is
+          - Local .data/ paths      → mapped to ../assets/
+        """
+        url = url.strip()
+        if self.is_onedrive_url(url):
+            return self.convert_onedrive_to_direct(url)
+        if url.startswith('http://') or url.startswith('https://'):
+            return url
+        return url.replace('.data/', '../assets/')
+
+    def resolve_photo_url(self, photo, url_path):
+        """
+        Resolve a photo value from _meta.yaml / front matter to a URL
+        that can be used directly in an <img src="..."> attribute.
+
+          - OneDrive sharing links  → Graph API direct-content URL
+          - Other http/https URLs   → used as-is
+          - Local paths (.data/x or bare filename)
+                                    → depth-correct relative URL
+                                      e.g. ../../assets/Treks/EBC/photo.jpg
+        """
+        photo = photo.strip()
+        if self.is_onedrive_url(photo):
+            return self.convert_onedrive_to_direct(photo)
+        if photo.startswith('http://') or photo.startswith('https://'):
+            return photo
+        # Local file — build a relative URL from the page back to assets/
+        filename = photo.split('/')[-1]
+        depth = url_path.count('/') + 1 if url_path else 0
+        prefix = '../' * depth
+        if url_path:
+            return f"{prefix}assets/{url_path}/{filename}"
+        return f"assets/{filename}"
+
+    def process_meta_photos(self, meta, url_path):
+        """
+        Return a copy of meta with 'photo' and 'photos' values resolved
+        to final URLs via resolve_photo_url().
+        """
+        processed = dict(meta)
+        if processed.get('photo'):
+            processed['photo'] = self.resolve_photo_url(processed['photo'], url_path)
+        if processed.get('photos'):
+            processed['photos'] = [
+                self.resolve_photo_url(p, url_path) for p in processed['photos']
+            ]
+        return processed
+
     def process_custom_syntax(self, content, base_path):
         """Process custom {{...}} syntax in markdown"""
-        
+
         # YouTube embeds
         def replace_youtube(match):
             video_id = match.group(1)
@@ -76,19 +147,16 @@ class SiteGenerator:
                 </iframe>
             </div>'''
         
-        # Local video
+        # Local / OneDrive video
         def replace_video(match):
             params = match.group(1).split(',')
-            video_path = params[0].strip()
-            poster = ''
+            video_url = self.process_url(params[0])
+            poster_attr = ''
             for param in params[1:]:
                 if 'poster=' in param:
-                    poster = param.split('=')[1].strip()
-            
-            # Convert .data/ path to assets path
-            video_url = video_path.replace('.data/', '../assets/')
-            poster_attr = f'poster="{poster.replace(".data/", "../assets/")}"' if poster else ''
-            
+                    poster_url = self.process_url(param.split('=', 1)[1])
+                    poster_attr = f'poster="{poster_url}"'
+
             return f'''<div class="video-container">
                 <video controls playsinline {poster_attr}>
                     <source src="{video_url}" type="video/mp4">
@@ -96,31 +164,30 @@ class SiteGenerator:
                 </video>
             </div>'''
         
-        # Slideshow
+        # Slideshow (local or OneDrive images)
         def replace_slideshow(match):
             params = match.group(1).split(',')
             images = [p.strip() for p in params if not p.strip().startswith('interval=')]
             interval = 3000  # default 3 seconds
-            
+
             for param in params:
                 if 'interval=' in param:
                     interval = int(param.split('=')[1].strip()) * 1000
-                    
+
             slides_html = ''
             for i, img in enumerate(images):
-                img_url = img.replace('.data/', '../assets/')
+                img_url = self.process_url(img)
                 active = 'active' if i == 0 else ''
                 slides_html += f'<img src="{img_url}" class="slide {active}" alt="Slide {i+1}">\n'
-                
+
             return f'''<div class="slideshow" data-interval="{interval}">
                 {slides_html}
             </div>'''
         
-        # Short video (vertical)
+        # Short video – vertical (local or OneDrive)
         def replace_short(match):
-            video_path = match.group(1).strip()
-            video_url = video_path.replace('.data/', '../assets/')
-            
+            video_url = self.process_url(match.group(1))
+
             return f'''<div class="short-video">
                 <video controls playsinline loop>
                     <source src="{video_url}" type="video/mp4">
@@ -128,15 +195,20 @@ class SiteGenerator:
                 </video>
             </div>'''
         
-        # Gallery
+        # Single photo (local or OneDrive)
+        def replace_photo(match):
+            img_url = self.process_url(match.group(1))
+            return f'<div class="photo-embed"><img src="{img_url}" alt="Photo"></div>'
+
+        # Gallery (local or OneDrive images)
         def replace_gallery(match):
             images = [img.strip() for img in match.group(1).split(',')]
             gallery_html = ''
-            
+
             for img in images:
-                img_url = img.replace('.data/', '../assets/')
+                img_url = self.process_url(img)
                 gallery_html += f'<img src="{img_url}" alt="Gallery image">\n'
-                
+
             return f'<div class="gallery">\n{gallery_html}</div>'
         
         # Quote
@@ -156,6 +228,7 @@ class SiteGenerator:
         content = re.sub(r'\{\{video:\s*([^}]+)\}\}', replace_video, content)
         content = re.sub(r'\{\{slideshow:\s*([^}]+)\}\}', replace_slideshow, content)
         content = re.sub(r'\{\{short:\s*([^}]+)\}\}', replace_short, content)
+        content = re.sub(r'\{\{photo:\s*([^}]+)\}\}', replace_photo, content)
         content = re.sub(r'\{\{gallery:\s*([^}]+)\}\}', replace_gallery, content)
         content = re.sub(r'\{\{quote:\s*([^}]+)\}\}', replace_quote, content)
         
@@ -196,9 +269,9 @@ class SiteGenerator:
         
     def generate_home_page(self):
         """Generate the home page"""
-        meta = self.load_meta(self.content_dir)
+        meta = self.process_meta_photos(self.load_meta(self.content_dir), '')
         sections = self.get_folder_structure(self.content_dir)
-        
+
         template = self.jinja_env.get_template('home.html')
         html = template.render(
             meta=meta,
@@ -214,12 +287,12 @@ class SiteGenerator:
         
     def generate_index_page(self, folder_path, url_path):
         """Generate an index/TOC page"""
-        meta = self.load_meta(folder_path)
+        meta = self.process_meta_photos(self.load_meta(folder_path), url_path)
         subsections = self.get_folder_structure(folder_path, url_path)
-        
+
         # Copy .data folder if exists
         self.copy_data_folder(folder_path, url_path)
-        
+
         template = self.jinja_env.get_template('index.html')
         html = template.render(
             meta=meta,
@@ -246,7 +319,7 @@ class SiteGenerator:
         front_matter, body = self.load_content(content_file)
         
         # Merge meta and front matter (front matter takes precedence)
-        page_meta = {**meta, **front_matter}
+        page_meta = self.process_meta_photos({**meta, **front_matter}, url_path)
         
         # Process custom syntax
         body = self.process_custom_syntax(body, url_path)
