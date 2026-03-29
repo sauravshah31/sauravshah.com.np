@@ -200,6 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeLazyLoading();
     initializeVideoAutoPause();
     initializeKeyboardNavigation();
+    initializeCommentForm();
     
     // Add fade-in animation
     document.body.style.opacity = '0';
@@ -208,6 +209,87 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.opacity = '1';
     }, 10);
 });
+
+// ============================================
+// Comment Form Submission
+// ============================================
+
+function initializeCommentForm() {
+    const form = document.getElementById('commentForm');
+    if (!form) return;
+
+    const submitBtn = document.getElementById('commentSubmit');
+    const statusEl = document.getElementById('formStatus');
+
+    function setStatus(message, type) {
+        statusEl.textContent = message;
+        statusEl.className = 'form-status ' + type;
+    }
+
+    function clearStatus() {
+        statusEl.textContent = '';
+        statusEl.className = 'form-status';
+    }
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        clearStatus();
+
+        // Basic client-side validation
+        const name = form.querySelector('[name="name"]').value.trim();
+        const message = form.querySelector('[name="message"]').value.trim();
+
+        if (!name) {
+            setStatus('Please enter your name. "fellow human" also works 😊', 'error');
+            form.querySelector('[name="name"]').focus();
+            return;
+        }
+        if (!message) {
+            setStatus('Please write a message before sending.', 'error');
+            form.querySelector('[name="message"]').focus();
+            return;
+        }
+
+        // Build payload
+        const payload = {
+            access_key: form.querySelector('[name="access_key"]').value,
+            title: "sauravshah.com.np - " + form.querySelector('[name="title"]').value,
+            name: name,
+            email: form.querySelector('[name="email"]').value.trim(),
+            message: message
+        };
+
+        // Disable button while submitting
+        submitBtn.disabled = true;
+        submitBtn.querySelector('span').textContent = 'Sending…';
+
+        try {
+            const response = await fetch('https://formly.email/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                redirect: 'manual'
+            });
+
+            const success = response.type === 'opaqueredirect' || response.status === 0 || response.ok;
+
+            if (success) {
+                setStatus('Thank you! Your message has been sent.', 'success');
+                form.reset();
+            } else {
+                setStatus('Something went wrong. Please try again.', 'error');
+            }
+        } catch (err) {
+            // Network errors or CORS opaque responses land here
+            // For no-cors / opaque responses the fetch resolves, not rejects,
+            // so a catch here means a genuine network failure.
+            setStatus('Could not send message. Check your connection and try again.', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.querySelector('span').textContent = 'Send Message';
+        }
+    });
+}
 
 // ============================================
 // Print Functionality

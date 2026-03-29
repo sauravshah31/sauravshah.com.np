@@ -601,10 +601,207 @@ body {
 }
 
 /* ============================================
+   Comment Section
+   ============================================ */
+.comment-section {
+    border-top: 2px solid var(--border-color);
+    padding: 60px 0 80px;
+    margin-top: 0;
+}
+
+.comment-box {
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+.comment-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.comment-ornament {
+    display: block;
+    font-size: 1.4rem;
+    color: var(--accent-color);
+    margin-bottom: 12px;
+    opacity: 0.7;
+    letter-spacing: 0.3em;
+}
+
+.comment-heading {
+    font-family: var(--font-heading);
+    font-size: 1.9rem;
+    font-weight: 700;
+    color: var(--text-color);
+    margin: 0 0 10px;
+    line-height: 1.2;
+}
+
+.comment-subtext {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-style: italic;
+    margin: 0;
+}
+
+/* Form layout */
+.comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.form-optional {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    font-style: italic;
+    font-size: 0.9em;
+}
+
+.comment-form input[type="text"],
+.comment-form input[type="email"],
+.comment-form textarea {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--text-color);
+    background: var(--bg-color);
+    border: 1.5px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 16px;
+    width: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+    resize: none;
+    -webkit-appearance: none;
+}
+
+.comment-form input[type="text"]::placeholder,
+.comment-form input[type="email"]::placeholder,
+.comment-form textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.comment-form input[type="text"]:focus,
+.comment-form input[type="email"]:focus,
+.comment-form textarea:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-color) 15%, transparent);
+}
+
+.comment-form textarea {
+    resize: vertical;
+    min-height: 120px;
+    line-height: 1.7;
+}
+
+/* Submit row */
+.form-footer {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.comment-submit {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 28px;
+    background: var(--accent-color);
+    color: var(--bg-color);
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px var(--shadow);
+    white-space: nowrap;
+}
+
+.comment-submit:hover:not(:disabled) {
+    background: var(--link-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px var(--shadow);
+}
+
+.comment-submit:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.comment-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.comment-submit i {
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+}
+
+.comment-submit:hover:not(:disabled) i {
+    transform: translateX(3px) translateY(-2px);
+}
+
+/* Status message */
+.form-status {
+    font-size: 0.95rem;
+    font-style: italic;
+    margin: 0;
+    transition: opacity 0.3s ease;
+}
+
+.form-status.success {
+    color: #5a8a5a;
+}
+
+body.night-mode .form-status.success {
+    color: #7ec87e;
+}
+
+.form-status.error {
+    color: #a05050;
+}
+
+body.night-mode .form-status.error {
+    color: #e08080;
+}
+
+/* ============================================
    Print Styles
    ============================================ */
 @media print {
-    .theme-controls {
+    .theme-controls,
+    .comment-section {
         display: none;
     }
     

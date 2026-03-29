@@ -289,7 +289,8 @@ class SiteGenerator:
         html = template.render(
             meta=meta,
             sections=sections,
-            current_path=''
+            current_path='',
+            page_title=meta.get('name', 'Saurav Shah')
         )
         
         output_file = self.output_dir / 'index.html'
@@ -310,7 +311,8 @@ class SiteGenerator:
         html = template.render(
             meta=meta,
             subsections=subsections,
-            current_path=url_path
+            current_path=url_path,
+            page_title=meta.get('title', url_path)
         )
         
         # Create output directory
@@ -347,7 +349,8 @@ class SiteGenerator:
         html = template.render(
             meta=page_meta,
             content=html_content,
-            current_path=url_path
+            current_path=url_path,
+            page_title=page_meta.get('title', url_path)
         )
         
         # Create output directory
