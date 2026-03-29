@@ -38,6 +38,18 @@ body.night-mode {
     box-sizing: border-box;
 }
 
+/* Prevent images from being dragged, saved via long-press, or selected */
+img {
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+    -webkit-touch-callout: none; /* iOS Safari long-press menu */
+    -webkit-user-select: none;
+    user-select: none;
+}
+
 html {
     font-size: 18px;
     scroll-behavior: smooth;

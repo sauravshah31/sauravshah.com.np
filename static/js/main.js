@@ -200,6 +200,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeLazyLoading();
     initializeVideoAutoPause();
     initializeKeyboardNavigation();
+    initializeImageProtection();
     initializeCommentForm();
     
     // Add fade-in animation
@@ -209,6 +210,31 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.style.opacity = '1';
     }, 10);
 });
+
+// ============================================
+// Image Protection
+// ============================================
+
+function initializeImageProtection() {
+    document.querySelectorAll('img').forEach(img => {
+        // Prevent drag-to-new-tab / drag-to-desktop
+        img.setAttribute('draggable', 'false');
+        img.addEventListener('dragstart', e => e.preventDefault());
+
+        // Prevent right-click context menu (Save image / Open in new tab)
+        img.addEventListener('contextmenu', e => e.preventDefault());
+    });
+
+    // Also block right-click on image-containing wrappers so the
+    // browser's "Save image" option can't be triggered via the parent
+    const imageWrappers = document.querySelectorAll(
+        '.header-photo, .header-slideshow, .gallery, ' +
+        '.slideshow, .photo-embed, .video-container, .short-video'
+    );
+    imageWrappers.forEach(el => {
+        el.addEventListener('contextmenu', e => e.preventDefault());
+    });
+}
 
 // ============================================
 // Comment Form Submission
