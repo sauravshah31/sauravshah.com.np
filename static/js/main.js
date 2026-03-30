@@ -88,15 +88,47 @@ async function initializeSlideshow(container) {
         container.appendChild(img);
     });
 
-    // Start auto-advance only when there is more than one image
-    if (images.length > 1) {
-        let current = 0;
-        setInterval(() => {
-            images[current].classList.remove('active');
-            current = (current + 1) % images.length;
-            images[current].classList.add('active');
-        }, interval);
+    // No auto-advance needed for a single image
+    if (images.length <= 1) return;
+
+    // ── Pauseable slideshow ──────────────────────────────────────────────
+    let current = 0;
+    let paused  = false;
+    let timer   = null;
+
+    function advance() {
+        if (paused) return;
+        images[current].classList.remove('active');
+        current = (current + 1) % images.length;
+        images[current].classList.add('active');
+        scheduleNext();
     }
+
+    function scheduleNext() {
+        clearTimeout(timer);
+        timer = setTimeout(advance, interval);
+    }
+
+    function pause() {
+        paused = true;
+        clearTimeout(timer);
+    }
+
+    function resume() {
+        paused = false;
+        scheduleNext();
+    }
+
+    // Desktop: hover to pause / un-hover to resume
+    container.addEventListener('mouseenter', pause);
+    container.addEventListener('mouseleave', resume);
+
+    // Mobile: hold touch to pause, release to resume
+    container.addEventListener('touchstart',  pause,  { passive: true });
+    container.addEventListener('touchend',    resume, { passive: true });
+    container.addEventListener('touchcancel', resume, { passive: true });
+
+    scheduleNext();
 }
 
 function initializeSlideshows() {
