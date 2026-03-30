@@ -20,6 +20,9 @@ class SiteGenerator:
         self.templates_dir = Path(templates_dir)
         self.static_dir = Path('static')
         
+        # Site base URL (used for absolute OG image URLs)
+        self.site_base_url = 'https://sauravshah.com.np'
+
         # Setup Jinja2
         self.jinja_env = Environment(loader=FileSystemLoader(str(self.templates_dir)))
         
@@ -114,6 +117,41 @@ class SiteGenerator:
         if url_path:
             return f"{prefix}assets/{url_path}/{filename}"
         return f"assets/{filename}"
+
+    def get_og_image(self, meta):
+        """
+        Return an absolute URL for the OG image.
+        Uses the first entry of 'photos' (slideshow), falling back to 'photo'.
+        meta must already be processed by process_meta_photos().
+        """
+        photo = None
+        if meta.get('photos'):
+            photo = meta['photos'][0]
+        elif meta.get('photo'):
+            photo = meta['photo']
+
+        if not photo:
+            return None
+
+        # Already an absolute URL (external / OneDrive)
+        if photo.startswith('http://') or photo.startswith('https://'):
+            return photo
+
+        # Local relative URL like ../../assets/Treks/photo.jpg
+        # Strip leading ../ sequences to get the site-root-relative path
+        clean = re.sub(r'^(\.\./)+', '', photo)
+        return f"{self.site_base_url}/{clean}"
+
+    def get_og_description(self, meta):
+        """
+        Return a plain-text description for OG tags.
+        Takes the first non-empty line of 'intro', truncated to 160 chars.
+        """
+        intro = meta.get('intro') or ''
+        first_line = intro.split('\n')[0].strip()
+        if not first_line:
+            return None
+        return first_line[:157] + '…' if len(first_line) > 160 else first_line
 
     def process_meta_photos(self, meta, url_path):
         """
@@ -285,12 +323,16 @@ class SiteGenerator:
         meta = self.process_meta_photos(self.load_meta(self.content_dir), '')
         sections = self.get_folder_structure(self.content_dir)
 
+        page_title = meta.get('name', 'Saurav Shah')
         template = self.jinja_env.get_template('home.html')
         html = template.render(
             meta=meta,
             sections=sections,
             current_path='',
-            page_title=meta.get('name', 'Saurav Shah')
+            page_title=page_title,
+            og_url=self.site_base_url + '/',
+            og_image=self.get_og_image(meta),
+            og_description=self.get_og_description(meta)
         )
         
         output_file = self.output_dir / 'index.html'
@@ -307,12 +349,16 @@ class SiteGenerator:
         # Copy .data folder if exists
         self.copy_data_folder(folder_path, url_path)
 
+        page_title = meta.get('title', url_path)
         template = self.jinja_env.get_template('index.html')
         html = template.render(
             meta=meta,
             subsections=subsections,
             current_path=url_path,
-            page_title=meta.get('title', url_path)
+            page_title=page_title,
+            og_url=self.site_base_url + '/' + url_path + '/',
+            og_image=self.get_og_image(meta),
+            og_description=self.get_og_description(meta)
         )
         
         # Create output directory
@@ -345,12 +391,16 @@ class SiteGenerator:
         # Copy .data folder if exists
         self.copy_data_folder(folder_path, url_path)
         
+        page_title = page_meta.get('title', url_path)
         template = self.jinja_env.get_template('content.html')
         html = template.render(
             meta=page_meta,
             content=html_content,
             current_path=url_path,
-            page_title=page_meta.get('title', url_path)
+            page_title=page_title,
+            og_url=self.site_base_url + '/' + url_path + '/',
+            og_image=self.get_og_image(page_meta),
+            og_description=self.get_og_description(page_meta)
         )
         
         # Create output directory
