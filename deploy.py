@@ -6,6 +6,7 @@ Converts markdown content with custom syntax to static HTML
 
 import os
 import re
+import json
 import shutil
 import base64
 import yaml
@@ -213,20 +214,15 @@ class SiteGenerator:
                 if 'interval=' in param:
                     interval = int(param.split('=')[1].strip()) * 1000
 
-            slides_html = ''
-            for i, img in enumerate(images):
-                img_url = self.process_url(img)
-                active = 'active' if i == 0 else ''
-                # All slides load eagerly so they are ready before the user sees them;
-                # decoding="async" keeps decoding off the main thread (no render blocking).
-                slides_html += (
-                    f'<img src="{img_url}" class="slide {active}" '
-                    f'alt="Slide {i+1}" loading="eager" decoding="async">\n'
-                )
+            # Store URLs as JSON; JS loads them asynchronously so the browser
+            # spinner never spins for slideshow images and no blank <img> is shown.
+            urls = [self.process_url(img) for img in images]
+            slides_json = json.dumps(urls)
 
-            return f'''<div class="slideshow" data-interval="{interval}">
-                {slides_html}
-            </div>'''
+            return (
+                f'<div class="slideshow" data-interval="{interval}" '
+                f"data-slides='{slides_json}'></div>"
+            )
 
         # Short video – vertical (local or OneDrive)
         def replace_short(match):

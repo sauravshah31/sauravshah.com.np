@@ -37,25 +37,71 @@ document.getElementById('nightModeToggle').addEventListener('click', function() 
 // Slideshow Functionality
 // ============================================
 
-function initializeSlideshows() {
-    const slideshows = document.querySelectorAll('.slideshow');
-    
-    slideshows.forEach(slideshow => {
-        const slides = slideshow.querySelectorAll('.slide');
-        const interval = parseInt(slideshow.dataset.interval) || 3000;
-        
-        if (slides.length <= 1) return; // No need for slideshow with 1 or 0 images
-        
-        let currentSlide = 0;
-        
-        function showNextSlide() {
-            slides[currentSlide].classList.remove('active');
-            currentSlide = (currentSlide + 1) % slides.length;
-            slides[currentSlide].classList.add('active');
+/**
+ * Load a single image URL, retrying up to maxRetries times on failure.
+ * Returns the loaded HTMLImageElement, or null if all attempts fail.
+ */
+async function loadImageWithRetry(url, maxRetries = 5) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        const img = await new Promise(resolve => {
+            const el = new Image();
+            el.onload  = () => resolve(el);
+            el.onerror = () => resolve(null);
+            el.src = url;
+        });
+        if (img) return img;
+        // Exponential back-off: 500 ms, 1 s, 1.5 s, 2 s …
+        if (attempt < maxRetries - 1) {
+            await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
         }
-        
-        // Start the slideshow
-        setInterval(showNextSlide, interval);
+    }
+    return null; // all retries exhausted
+}
+
+/**
+ * Initialise a single slideshow container.
+ * URLs are read from data-slides (JSON array).
+ * All images are loaded in parallel via Promise.all; only successfully
+ * loaded images are inserted into the DOM — no blank/alt-text placeholders.
+ */
+async function initializeSlideshow(container) {
+    let urls;
+    try {
+        urls = JSON.parse(container.dataset.slides || '[]');
+    } catch (e) {
+        return;
+    }
+    if (!urls.length) return;
+
+    const interval = parseInt(container.dataset.interval) || 3000;
+
+    // Load all images in parallel (each with its own retry budget)
+    const results = await Promise.all(urls.map(url => loadImageWithRetry(url)));
+    const images  = results.filter(img => img !== null);
+
+    if (!images.length) return; // every image failed — leave container empty
+
+    // Insert only the successfully loaded images
+    images.forEach((img, i) => {
+        img.classList.add('slide');
+        if (i === 0) img.classList.add('active');
+        container.appendChild(img);
+    });
+
+    // Start auto-advance only when there is more than one image
+    if (images.length > 1) {
+        let current = 0;
+        setInterval(() => {
+            images[current].classList.remove('active');
+            current = (current + 1) % images.length;
+            images[current].classList.add('active');
+        }, interval);
+    }
+}
+
+function initializeSlideshows() {
+    document.querySelectorAll('.slideshow[data-slides]').forEach(container => {
+        initializeSlideshow(container); // fire-and-forget; runs in background
     });
 }
 

@@ -534,6 +534,22 @@ body {
     box-shadow: 0 4px 16px var(--shadow);
 }
 
+/* Loading placeholder while images load via JS */
+.slideshow:empty {
+    background: var(--border-color);
+    min-height: 200px;
+    animation: slideshow-pulse 1.5s ease-in-out infinite;
+}
+
+.header-slideshow .slideshow:empty {
+    min-height: 200px;
+}
+
+@keyframes slideshow-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
 .slideshow img {
     width: 100%;
     height: auto;
