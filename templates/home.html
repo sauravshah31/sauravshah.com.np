@@ -8,10 +8,7 @@
         <h1 class="site-title">{{ meta.name or 'Saurav Shah' }}</h1>
         
         {% if meta.photo %}
-        <div class="header-photo home-photo">
-            <img src="{{ meta.photo }}" alt="{{ meta.name or 'Profile Photo' }}"
-                 loading="eager" decoding="async">
-        </div>
+        <div class="header-photo home-photo" data-photo="{{ meta.photo }}"></div>
         {% endif %}
         
         <div class="header-content">

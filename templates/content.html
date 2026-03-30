@@ -19,14 +19,10 @@
         
         {% if meta.photos %}
         <div class="header-slideshow home-photo">
-            <div class="slideshow header-slideshow-inner" data-interval="4000" data-slides="{{ meta.photos | tojson }}">
-            </div>
+            <div class="slideshow header-slideshow-inner" data-interval="4000" data-slides="{{ meta.photos | tojson }}"></div>
         </div>
         {% elif meta.photo %}
-        <div class="header-photo home-photo">
-            <img src="{{ meta.photo }}" alt="{{ meta.title or 'Photo' }}"
-                 loading="eager" decoding="async">
-        </div>
+        <div class="header-photo home-photo" data-photo="{{ meta.photo }}"></div>
         {% endif %}
         
         <div class="header-content">

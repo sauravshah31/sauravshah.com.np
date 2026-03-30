@@ -271,23 +271,83 @@ function initializeSystemThemeListener() {
 // ============================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Non-image initialisation — runs immediately, does not delay window.load
     loadThemePreferences();
     initializeSystemThemeListener();
-    initializeSlideshows();
     initializeSmoothScroll();
-    initializeLazyLoading();
     initializeVideoAutoPause();
     initializeKeyboardNavigation();
     initializeImageProtection();
     initializeCommentForm();
-    
-    // Add fade-in animation
+
+    // Fade-in animation
     document.body.style.opacity = '0';
     setTimeout(() => {
         document.body.style.transition = 'opacity 0.3s ease';
         document.body.style.opacity = '1';
     }, 10);
 });
+
+// Image loading starts AFTER window.load so the browser tab spinner
+// stops as soon as HTML/CSS/JS are ready, not when all images finish.
+window.addEventListener('load', function() {
+    initializeSlideshows();
+    initializePhotoLoading();
+    initializeLazyLoading();
+});
+
+// ============================================
+// Async Photo & Gallery Loading
+// ============================================
+
+/**
+ * Helper: apply image-protection attributes to a freshly loaded <img>.
+ */
+function applyImageProtection(img) {
+    img.setAttribute('draggable', 'false');
+    img.addEventListener('dragstart', e => e.preventDefault());
+    img.addEventListener('contextmenu', e => e.preventDefault());
+}
+
+/**
+ * Load all [data-photo] single-photo containers and
+ * [data-gallery] gallery containers asynchronously, in parallel,
+ * using the same loadImageWithRetry helper as the slideshow.
+ */
+async function initializePhotoLoading() {
+    const tasks = [];
+
+    // ── Single photos ────────────────────────────────────────────────────
+    document.querySelectorAll('[data-photo]').forEach(container => {
+        tasks.push((async () => {
+            const url = container.dataset.photo;
+            if (!url) return;
+            const img = await loadImageWithRetry(url);
+            if (!img) return; // all retries failed — leave container empty
+            applyImageProtection(img);
+            container.appendChild(img);
+        })());
+    });
+
+    // ── Galleries ────────────────────────────────────────────────────────
+    document.querySelectorAll('.gallery[data-gallery]').forEach(container => {
+        tasks.push((async () => {
+            let urls;
+            try { urls = JSON.parse(container.dataset.gallery || '[]'); } catch (e) { return; }
+            if (!urls.length) return;
+
+            // Load all gallery images in parallel
+            const results = await Promise.all(urls.map(url => loadImageWithRetry(url)));
+            results.forEach(img => {
+                if (!img) return; // skip failed images
+                applyImageProtection(img);
+                container.appendChild(img);
+            });
+        })());
+    });
+
+    await Promise.all(tasks);
+}
 
 // ============================================
 // Image Protection

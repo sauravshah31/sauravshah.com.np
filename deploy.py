@@ -238,25 +238,15 @@ class SiteGenerator:
         # Single photo (local or OneDrive)
         def replace_photo(match):
             img_url = self.process_url(match.group(1))
-            return (
-                f'<div class="photo-embed">'
-                f'<img src="{img_url}" alt="Photo" loading="eager" decoding="async">'
-                f'</div>'
-            )
+            # No <img> in HTML; JS loads asynchronously via data-photo
+            return f'<div class="photo-embed" data-photo="{img_url}"></div>'
 
         # Gallery (local or OneDrive images)
         def replace_gallery(match):
             images = [img.strip() for img in match.group(1).split(',')]
-            gallery_html = ''
-
-            for img in images:
-                img_url = self.process_url(img)
-                gallery_html += (
-                    f'<img src="{img_url}" alt="Gallery image" '
-                    f'loading="eager" decoding="async">\n'
-                )
-
-            return f'<div class="gallery">\n{gallery_html}</div>'
+            urls = [self.process_url(img) for img in images]
+            # No <img> in HTML; JS loads asynchronously via data-gallery
+            return f"<div class=\"gallery\" data-gallery='{json.dumps(urls)}'></div>"
         
         # Quote
         def replace_quote(match):

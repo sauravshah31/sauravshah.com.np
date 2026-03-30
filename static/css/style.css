@@ -536,17 +536,21 @@ body {
 }
 
 /* Loading placeholder while images load via JS */
-.slideshow:empty {
+.slideshow:empty,
+.photo-embed:empty,
+.gallery:empty,
+.header-photo:empty {
     background: var(--border-color);
-    min-height: 200px;
-    animation: slideshow-pulse 1.5s ease-in-out infinite;
+    animation: img-load-pulse 1.5s ease-in-out infinite;
 }
 
-.header-slideshow .slideshow:empty {
+.slideshow:empty,
+.photo-embed:empty {
     min-height: 200px;
+    border-radius: 12px;
 }
 
-@keyframes slideshow-pulse {
+@keyframes img-load-pulse {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
 }
