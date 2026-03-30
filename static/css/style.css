@@ -261,7 +261,8 @@ body {
 }
 
 /* Home page photo is circular */
-.header-photo.home-photo {
+.header-photo.home-photo,
+.header-slideshow.home-photo  {
     border-radius: 50%;
 }
 
