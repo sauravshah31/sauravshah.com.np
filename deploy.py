@@ -81,19 +81,27 @@ class SiteGenerator:
         """
         return url
 
-    def process_url(self, url):
+    def process_url(self, url, url_path=''):
         """
         Resolve a media URL inside markdown body:
-          - OneDrive sharing links  → Graph API direct-content URL
+          - OneDrive sharing links  → used as-is (browser follows redirect)
           - Other http/https URLs   → used as-is
-          - Local .data/ paths      → mapped to ../assets/
+          - Local .data/ paths      → depth-correct relative URL to assets/
         """
         url = url.strip()
         if self.is_onedrive_url(url):
             return self.convert_onedrive_to_direct(url)
         if url.startswith('http://') or url.startswith('https://'):
             return url
-        return url.replace('.data/', '../assets/')
+        if '.data/' in url:
+            # Extract the filename portion after .data/
+            filename = url.split('.data/')[-1]
+            depth = url_path.count('/') + 1 if url_path else 0
+            prefix = '../' * depth
+            if url_path:
+                return f"{prefix}assets/{url_path}/{filename}"
+            return f"assets/{filename}"
+        return url
 
     def resolve_photo_url(self, photo, url_path):
         """
@@ -190,11 +198,11 @@ class SiteGenerator:
         # Local / OneDrive video
         def replace_video(match):
             params = match.group(1).split(',')
-            video_url = self.process_url(params[0])
+            video_url = self.process_url(params[0], base_path)
             poster_attr = ''
             for param in params[1:]:
                 if 'poster=' in param:
-                    poster_url = self.process_url(param.split('=', 1)[1])
+                    poster_url = self.process_url(param.split('=', 1)[1], base_path)
                     poster_attr = f'poster="{poster_url}"'
 
             return f'''<div class="video-container">
@@ -216,7 +224,7 @@ class SiteGenerator:
 
             # Store URLs as JSON; JS loads them asynchronously so the browser
             # spinner never spins for slideshow images and no blank <img> is shown.
-            urls = [self.process_url(img) for img in images]
+            urls = [self.process_url(img, base_path) for img in images]
             slides_json = json.dumps(urls)
 
             return (
@@ -226,7 +234,7 @@ class SiteGenerator:
 
         # Short video – vertical (local or OneDrive)
         def replace_short(match):
-            video_url = self.process_url(match.group(1))
+            video_url = self.process_url(match.group(1), base_path)
 
             return f'''<div class="short-video">
                 <video controls playsinline loop preload="metadata">
@@ -237,14 +245,14 @@ class SiteGenerator:
 
         # Single photo (local or OneDrive)
         def replace_photo(match):
-            img_url = self.process_url(match.group(1))
+            img_url = self.process_url(match.group(1), base_path)
             # No <img> in HTML; JS loads asynchronously via data-photo
             return f'<div class="photo-embed" data-photo="{img_url}"></div>'
 
         # Gallery (local or OneDrive images)
         def replace_gallery(match):
             images = [img.strip() for img in match.group(1).split(',')]
-            urls = [self.process_url(img) for img in images]
+            urls = [self.process_url(img, base_path) for img in images]
             # No <img> in HTML; JS loads asynchronously via data-gallery
             return f"<div class=\"gallery\" data-gallery='{json.dumps(urls)}'></div>"
         
@@ -260,6 +268,19 @@ class SiteGenerator:
             author_html = f'<cite>— {author}</cite>' if author else ''
             return f'<blockquote class="styled-quote"><p>{text}</p>{author_html}</blockquote>'
         
+        # Standard markdown images with .data/ paths → async photo-embed divs.
+        # Must run BEFORE the markdown processor so the raw .data/ path never
+        # reaches the HTML output.
+        def replace_md_image(match):
+            alt  = match.group(1)
+            path = match.group(2).strip()
+            if '.data/' in path:
+                img_url = self.process_url(path, base_path)
+                return f'<div class="photo-embed" data-photo="{img_url}"></div>'
+            return match.group(0)  # leave non-.data images unchanged
+
+        content = re.sub(r'!\[([^\]]*)\]\(([^)]+)\)', replace_md_image, content)
+
         # Apply replacements
         content = re.sub(r'\{\{youtube:\s*([^}]+)\}\}', replace_youtube, content)
         content = re.sub(r'\{\{video:\s*([^}]+)\}\}', replace_video, content)
