@@ -176,8 +176,36 @@ class SiteGenerator:
             ]
         return processed
 
+    def fix_mixed_list_indentation(self, content):
+        """
+        Insert a blank line before a bullet (* or -) item that immediately
+        follows a numbered (1.) item at the same indentation level.
+
+        Without this, Python's markdown treats the bullet as lazy continuation
+        text of the numbered item instead of starting a new unordered list.
+        """
+        lines = content.split('\n')
+        result = []
+
+        for line in lines:
+            bullet_match = re.match(r'^(\s*)[*\-]\s', line)
+            if bullet_match and result:
+                indent = bullet_match.group(1)
+                # Find the previous non-empty line
+                prev_line = next((l for l in reversed(result) if l.strip()), None)
+                if prev_line:
+                    num_match = re.match(r'^(\s*)\d+\.\s', prev_line)
+                    if num_match and num_match.group(1) == indent:
+                        result.append('')  # blank line forces a new list
+            result.append(line)
+
+        return '\n'.join(result)
+
     def process_custom_syntax(self, content, base_path):
         """Process custom {{...}} syntax in markdown"""
+        # Fix mixed ordered/unordered lists at the same indentation level
+        content = self.fix_mixed_list_indentation(content)
+
 
         # YouTube embeds
         def replace_youtube(match):
@@ -393,7 +421,10 @@ class SiteGenerator:
         body = self.process_custom_syntax(body, url_path)
         
         # Convert markdown to HTML
-        html_content = markdown(body, extensions=['extra', 'codehilite', 'fenced_code'])
+        # sane_lists: prevents mixing ordered/unordered items in the same list,
+        # so  "* bullet" after "1. item" starts a new unordered list instead of
+        # being treated as item 2 of the ordered list.
+        html_content = markdown(body, extensions=['extra', 'codehilite', 'fenced_code', 'sane_lists'])
         
         # Copy .data folder if exists
         self.copy_data_folder(folder_path, url_path)
